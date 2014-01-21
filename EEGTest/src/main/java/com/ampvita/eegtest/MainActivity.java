@@ -13,12 +13,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GraphViewSeries;
+import com.jjoe64.graphview.LineGraphView;
 import com.neurosky.thinkgear.TGDevice;
 import com.neurosky.thinkgear.TGEegPower;
 import com.neurosky.thinkgear.TGRawMulti;
+
+import java.util.Random;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -26,6 +32,9 @@ public class MainActivity extends ActionBarActivity {
     BluetoothAdapter btAdapter;
     TextView tv;
     TGRawMulti tgRaw;
+    GraphViewSeries eegSeries;
+    double graph2LastXValue = 0d;
+    GraphView graphView;
 
 
     @Override
@@ -34,6 +43,19 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         tgRaw = new TGRawMulti();
+        eegSeries = new GraphViewSeries(new GraphView.GraphViewData[] {});
+        graphView = new LineGraphView(this, "EEG Data");
+        graphView.setScrollable(true);
+        graphView.setManualYAxis(true);
+        String[] str = {""};
+        graphView.setHorizontalLabels(str);
+
+        graphView.setManualYAxisBounds(2000,-2200);
+        graphView.addSeries(eegSeries);
+        graphView.setViewPort(1, 100);
+
+        LinearLayout layout = (LinearLayout) findViewById(R.id.graph1);
+        layout.addView(graphView);
 
         tv = (TextView)findViewById(R.id.displayText);
 
@@ -97,10 +119,12 @@ public class MainActivity extends ActionBarActivity {
 
                 case TGDevice.MSG_RAW_DATA:
                     int rawValue = msg.arg1;
-                    //Log.v(TAG, "Data: " + rawValue);
+                    graph2LastXValue += 1d;
+                    eegSeries.appendData(new GraphView.GraphViewData(graph2LastXValue, rawValue),
+                           true, 120);
                     break;
                 case TGDevice.MSG_EEG_POWER:
-                    TGEegPower ep = (TGEegPower)msg.obj;
+                    /*TGEegPower ep = (TGEegPower)msg.obj;
                     tv.setText("Delta: " + ep.delta + '\n' +
                             "HighAlpha: " + ep.highAlpha + '\n' +
                             "LowAlpha: " + ep.lowAlpha + '\n' +
@@ -108,7 +132,7 @@ public class MainActivity extends ActionBarActivity {
                             "LowBeta: " + ep.lowBeta + '\n' +
                             "MidGamma: " + ep.midGamma + '\n' +
                             "LowGamma: " + ep.lowGamma + '\n' +
-                            "Theta: " + ep.theta + '\n');
+                            "Theta: " + ep.theta + '\n');*/
                     break;
                 default:
                     break;
