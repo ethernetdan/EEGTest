@@ -18,12 +18,14 @@ import android.widget.Toast;
 
 import com.neurosky.thinkgear.TGDevice;
 import com.neurosky.thinkgear.TGEegPower;
+import com.neurosky.thinkgear.TGRawMulti;
 
 
 public class MainActivity extends ActionBarActivity {
     TGDevice tgDevice;
     BluetoothAdapter btAdapter;
     TextView tv;
+    TGRawMulti tgRaw;
 
 
     @Override
@@ -31,13 +33,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         btAdapter = BluetoothAdapter.getDefaultAdapter();
+        tgRaw = new TGRawMulti();
 
-        tv = (TextView)findViewById(R.id.text);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }
+        tv = (TextView)findViewById(R.id.displayText);
 
         if (btAdapter != null) {
             handler.sendEmptyMessage(TGDevice.MSG_THINKCAP_RAW);
@@ -46,6 +44,8 @@ public class MainActivity extends ActionBarActivity {
         } else {
             Toast.makeText(this, "Bluetooth not available", Toast.LENGTH_LONG).show();
         }
+        tv = (TextView)findViewById(R.id.displayText);
+        tv.setText("test");
 
 
     }
@@ -81,6 +81,19 @@ public class MainActivity extends ActionBarActivity {
                 case TGDevice.MSG_HEART_RATE:
                     tv.setText("Heart rate: " + msg.arg1 + "\n");
                     break;
+                case TGDevice.MSG_RAW_MULTI:
+                    tgRaw = (TGRawMulti)msg.obj;
+                    tv.append("raw: " +
+                            tgRaw.ch1 + ", " +
+                            tgRaw.ch2 + ", " +
+                            tgRaw.ch3 + ", " +
+                            tgRaw.ch4 + ", " +
+                            tgRaw.ch5 + ", " +
+                            tgRaw.ch6 + ", " +
+                            tgRaw.ch7 + ", " +
+                            tgRaw.ch8 + ", " +
+                            "\n");
+                    break;
 
                 case TGDevice.MSG_RAW_DATA:
                     int rawValue = msg.arg1;
@@ -88,9 +101,16 @@ public class MainActivity extends ActionBarActivity {
                     break;
                 case TGDevice.MSG_EEG_POWER:
                     TGEegPower ep = (TGEegPower)msg.obj;
-                    Log.v(TAG, "Delta: " + ep.delta);
+                    tv.setText("Delta: " + ep.delta + '\n' +
+                            "HighAlpha: " + ep.highAlpha + '\n' +
+                            "LowAlpha: " + ep.lowAlpha + '\n' +
+                            "HighBeta: " + ep.highBeta + '\n' +
+                            "LowBeta: " + ep.lowBeta + '\n' +
+                            "MidGamma: " + ep.midGamma + '\n' +
+                            "LowGamma: " + ep.lowGamma + '\n' +
+                            "Theta: " + ep.theta + '\n');
+                    break;
                 default:
-                    Log.e(TAG, "Unknown Message");
                     break;
             }
         }
