@@ -14,9 +14,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Button;
 
 import com.firebase.client.FirebaseError;
 import com.jjoe64.graphview.GraphView;
@@ -33,6 +35,8 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.ValueEventListener;
 
+import org.json.*;
+
 
 public class MainActivity extends ActionBarActivity {
     TGDevice tgDevice;
@@ -47,8 +51,11 @@ public class MainActivity extends ActionBarActivity {
     ArrayList<Integer> latestSignalSample; // Stores the most recently collected EEG data points
     public static int samplePointCount = 100; // The number of points to buffer in the most recently collected points
 
+    private JSONObject MYOBJ;
+
     // TODO: change this to your own Firebase URL
     private static final String FIREBASE_URL = "https://bubble-data.firebaseIO.com";
+
 
     // Create a reference to a Firebase location
     private Firebase ref;
@@ -85,6 +92,7 @@ public class MainActivity extends ActionBarActivity {
         tv = (TextView)findViewById(R.id.displayText);
         tv.setText("test");
 
+        // Correct orientation
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         /**
@@ -102,7 +110,16 @@ public class MainActivity extends ActionBarActivity {
          */
 
         ref = new Firebase(FIREBASE_URL); // Connect to Firebase
-        ref.setValue("Bubble online!"); // Write data to Firebase
+
+        // Add test button
+        Button testButton = (Button) findViewById(R.id.test_button);
+        testButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+                Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
+                ref.setValue("Bubble online!"); // Write data to Firebase
+            }
+        });
     }
 
     @Override
@@ -132,6 +149,19 @@ public class MainActivity extends ActionBarActivity {
         // Retrieve data from server
         // Store data in BrainStateModel objects
         // Update BrainStateModel objects (if needed)
+    }
+
+    public void postBrainDataExample() {
+        MYOBJ = new JSONObject() {
+            {
+                try {
+                    put("label", "hackin'");
+                    put("data", "(nothing)");
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 
     public void postBrainDataModels() {
@@ -253,7 +283,7 @@ public class MainActivity extends ActionBarActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            View rootView = inflater.inflate(R.layout.activity_main, container, false);
             return rootView;
         }
     }
