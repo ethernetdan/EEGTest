@@ -1,6 +1,7 @@
 package com.ampvita.eegtest;
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.pm.ActivityInfo;
 import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Message;
@@ -17,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.FirebaseError;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphViewSeries;
 import com.jjoe64.graphview.LineGraphView;
@@ -24,7 +26,12 @@ import com.neurosky.thinkgear.TGDevice;
 import com.neurosky.thinkgear.TGEegPower;
 import com.neurosky.thinkgear.TGRawMulti;
 
+import java.util.ArrayList;
 import java.util.Random;
+
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.ValueEventListener;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -36,6 +43,15 @@ public class MainActivity extends ActionBarActivity {
     double graph2LastXValue = 0d;
     GraphView graphView;
 
+    ArrayList<BrainStateModel> brainStates; // Stores the brain state models used for classifying the current state of mind
+    ArrayList<Integer> latestSignalSample; // Stores the most recently collected EEG data points
+    public static int samplePointCount = 100; // The number of points to buffer in the most recently collected points
+
+    // TODO: change this to your own Firebase URL
+    private static final String FIREBASE_URL = "https://bubble-data.firebaseIO.com";
+
+    // Create a reference to a Firebase location
+    private Firebase ref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +85,65 @@ public class MainActivity extends ActionBarActivity {
         tv = (TextView)findViewById(R.id.displayText);
         tv.setText("test");
 
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
+        /**
+         * Set up data structures for monitoring the EEG data
+         */
+
+        // Initialize storage for latest signal sample
+        latestSignalSample = new ArrayList<Integer>();
+
+        // Initialize storage buffer for the current user's saved brain states.
+        this.brainStates = new ArrayList<BrainStateModel>();
+
+        /**
+         * Set up Firebase for requests.
+         */
+
+        ref = new Firebase(FIREBASE_URL); // Connect to Firebase
+        ref.setValue("Bubble online!"); // Write data to Firebase
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Read data and react to changes
+        ref.addValueEventListener(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(DataSnapshot snap) {
+                //System.out.println(snap.getName() + " -> " + snap.getValue());
+                Log.i("getData", snap.getName() + " -> " + snap.getValue());
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+    }
+
+    /**
+     * Retrieves and buffers the stored gestures for the current user (from the remote server)
+     */
+    public void getBrainDataModels() {
+        // Retrieve data from server
+        // Store data in BrainStateModel objects
+        // Update BrainStateModel objects (if needed)
+    }
+
+    public void postBrainDataModels() {
+        // POST brain data to server
+
+        // Write data to Firebase
+        ref.setValue("Do you have data? You'll love Firebase.");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     private final Handler handler = new Handler() {
@@ -121,7 +195,14 @@ public class MainActivity extends ActionBarActivity {
                     int rawValue = msg.arg1;
                     graph2LastXValue += 1d;
                     eegSeries.appendData(new GraphView.GraphViewData(graph2LastXValue, rawValue),
-                           true, 120);
+                            true, 120);
+
+                    // TODO: Store these values when in "capture" mode
+                    latestSignalSample.add(rawValue); // Append new element to list
+                    if (latestSignalSample.size() > MainActivity.samplePointCount) {
+                        latestSignalSample.remove(0); // Remove first data point from list
+                    }
+
                     break;
                 case TGDevice.MSG_EEG_POWER:
                     /*TGEegPower ep = (TGEegPower)msg.obj;
@@ -143,7 +224,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
@@ -171,7 +252,7 @@ public class MainActivity extends ActionBarActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
+                                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
             return rootView;
         }

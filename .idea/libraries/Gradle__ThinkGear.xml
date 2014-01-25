@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: ThinkGear">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/EEGTest/libs/ThinkGear.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

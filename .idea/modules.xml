@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/EEGTest/EEGTest.iml" filepath="$PROJECT_DIR$/EEGTest/EEGTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/EEGTestProject.iml" filepath="$PROJECT_DIR$/EEGTestProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/EEGTest.iml" filepath="$PROJECT_DIR$/EEGTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/EEGTest/EEGTest-EEGTest.iml" filepath="$PROJECT_DIR$/EEGTest/EEGTest-EEGTest.iml" />
     </modules>
   </component>
 </project>
