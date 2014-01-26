@@ -2,7 +2,6 @@ package com.ampvita.eegtest;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.pm.ActivityInfo;
-import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
@@ -14,7 +13,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,11 +23,18 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphViewSeries;
 import com.jjoe64.graphview.LineGraphView;
 import com.neurosky.thinkgear.TGDevice;
-import com.neurosky.thinkgear.TGEegPower;
 import com.neurosky.thinkgear.TGRawMulti;
 
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -41,7 +46,7 @@ import org.json.*;
 public class MainActivity extends ActionBarActivity {
     TGDevice tgDevice;
     BluetoothAdapter btAdapter;
-    TextView tv;
+    TextView serverStatus;
     TGRawMulti tgRaw;
     GraphViewSeries eegSeries;
     double graph2LastXValue = 0d;
@@ -53,12 +58,23 @@ public class MainActivity extends ActionBarActivity {
 
     private JSONObject MYOBJ;
 
+
+    // Default IP
+    public static String SERVERIP = "10.0.2.2";
+
+    // Designate a port
+    public static final int SERVERPORT = 6002;
+
+    // Handler for network communications with Google Glass
+    private Handler networkHandler = new Handler();
+
+    private ServerSocket serverSocket; // Socket used to listen for connection
+
     // TODO: change this to your own Firebase URL
     private static final String FIREBASE_URL = "https://bubble-data.firebaseIO.com";
 
-
     // Create a reference to a Firebase location
-    private Firebase ref;
+    private Firebase firebaseReference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,17 +96,17 @@ public class MainActivity extends ActionBarActivity {
         LinearLayout layout = (LinearLayout) findViewById(R.id.graph1);
         layout.addView(graphView);
 
-        tv = (TextView)findViewById(R.id.displayText);
+        serverStatus = (TextView)findViewById(R.id.displayText);
 
         if (btAdapter != null) {
-            handler.sendEmptyMessage(TGDevice.MSG_THINKCAP_RAW);
-            tgDevice = new TGDevice(btAdapter, handler);
+            eegHandler.sendEmptyMessage(TGDevice.MSG_THINKCAP_RAW);
+            tgDevice = new TGDevice(btAdapter, eegHandler);
             tgDevice.connect(true);
         } else {
             Toast.makeText(this, "Bluetooth not available", Toast.LENGTH_LONG).show();
         }
-        tv = (TextView)findViewById(R.id.displayText);
-        tv.setText("test");
+        serverStatus = (TextView)findViewById(R.id.displayText);
+        serverStatus.setText("test");
 
         // Correct orientation
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
@@ -106,18 +122,26 @@ public class MainActivity extends ActionBarActivity {
         this.brainStates = new ArrayList<BrainStateModel>();
 
         /**
+         * Start server
+         */
+
+        Thread fst = new Thread(new ServerThread());
+        fst.start();
+
+        /**
          * Set up Firebase for requests.
          */
 
-        ref = new Firebase(FIREBASE_URL); // Connect to Firebase
+        firebaseReference = new Firebase(FIREBASE_URL); // Connect to Firebase
 
         // Add test button
         Button testButton = (Button) findViewById(R.id.test_button);
         testButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Perform action on click
-                Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
-                ref.setValue("Bubble online!"); // Write data to Firebase
+                //Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
+                //firebaseReference.setValue("Bubble online!"); // Write data to Firebase
+                postBrainDataExample();
             }
         });
     }
@@ -127,7 +151,7 @@ public class MainActivity extends ActionBarActivity {
         super.onStart();
 
         // Read data and react to changes
-        ref.addValueEventListener(new ValueEventListener() {
+        firebaseReference.addValueEventListener(new ValueEventListener() {
 
             @Override
             public void onDataChange(DataSnapshot snap) {
@@ -140,6 +164,17 @@ public class MainActivity extends ActionBarActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        try {
+            // make sure you close the socket upon exiting
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -155,8 +190,29 @@ public class MainActivity extends ActionBarActivity {
         MYOBJ = new JSONObject() {
             {
                 try {
-                    put("label", "hackin'");
-                    put("data", "(nothing)");
+                    // Create and return a new child reference for the object
+                    Firebase freshFirebaseReference = firebaseReference.push();
+                    //freshFirebaseReference.setValue("button pressed...");
+
+                    // Create object to store in Firebase
+                    Map<String, Object> toSet = new HashMap<String, Object>();
+                    toSet.put("label", "hacking");
+
+//                    List<Object> exampleData = new List<Object>();
+//                    for (int i = 0; i < latestSignalSample.size(); i++) {
+//                        exampleData.
+//                    }
+                    toSet.put("data", latestSignalSample);
+
+                    // Write example to Firebase
+                    freshFirebaseReference.setValue(toSet, new Firebase.CompletionListener() {
+                        @Override
+                        public void onComplete(FirebaseError error, Firebase ref) {
+                            //outstandingSegments.remove(segmentName);
+                            Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    //firebaseReference.setValue(toSet);
                 } catch(Exception e){
                     e.printStackTrace();
                 }
@@ -168,7 +224,7 @@ public class MainActivity extends ActionBarActivity {
         // POST brain data to server
 
         // Write data to Firebase
-        ref.setValue("Do you have data? You'll love Firebase.");
+        firebaseReference.setValue("Do you have data? You'll love Firebase.");
     }
 
     @Override
@@ -176,7 +232,7 @@ public class MainActivity extends ActionBarActivity {
         super.onResume();
     }
 
-    private final Handler handler = new Handler() {
+    private final Handler eegHandler = new Handler() {
         String TAG = "EEGTest";
         @Override
         public void handleMessage(Message msg) {
@@ -205,11 +261,11 @@ public class MainActivity extends ActionBarActivity {
                     Log.v(TAG, "Attention: " + msg.arg1);
                     break;
                 case TGDevice.MSG_HEART_RATE:
-                    tv.setText("Heart rate: " + msg.arg1 + "\n");
+                    serverStatus.setText("Heart rate: " + msg.arg1 + "\n");
                     break;
                 case TGDevice.MSG_RAW_MULTI:
                     tgRaw = (TGRawMulti)msg.obj;
-                    tv.append("raw: " +
+                    serverStatus.append("raw: " +
                             tgRaw.ch1 + ", " +
                             tgRaw.ch2 + ", " +
                             tgRaw.ch3 + ", " +
@@ -236,7 +292,7 @@ public class MainActivity extends ActionBarActivity {
                     break;
                 case TGDevice.MSG_EEG_POWER:
                     /*TGEegPower ep = (TGEegPower)msg.obj;
-                    tv.setText("Delta: " + ep.delta + '\n' +
+                    serverStatus.setText("Delta: " + ep.delta + '\n' +
                             "HighAlpha: " + ep.highAlpha + '\n' +
                             "LowAlpha: " + ep.lowAlpha + '\n' +
                             "HighBeta: " + ep.highBeta + '\n' +
@@ -288,4 +344,74 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    public class ServerThread implements Runnable {
+
+        public void run() {
+            try {
+                if (SERVERIP != null) {
+                    networkHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            serverStatus.setText("Listening on IP: " + SERVERIP);
+                        }
+                    });
+                    serverSocket = new ServerSocket(SERVERPORT);
+                    while (true) {
+                        // listen for incoming clients
+                        Socket client = serverSocket.accept();
+                        networkHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                serverStatus.setText("Connected.");
+                            }
+                        });
+
+                        try {
+                            BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                            String line = null;
+                            while ((line = in.readLine()) != null) {
+                                final String data = line;
+                                Log.d("ServerActivity", data);
+                                networkHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        /// the fun goes here
+                                        serverStatus.setText(data);
+                                    }
+                                });
+                            }
+                            break;
+                        } catch (Exception e) {
+                            networkHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    serverStatus.setText("Oops. Connection interrupted. Please reconnect your phones.");
+                                }
+                            });
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    networkHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            serverStatus.setText("Couldn't detect internet connection.");
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                final Exception ed = e;
+                networkHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        serverStatus.setText("Error: " + ed.getStackTrace());
+                    }
+                });
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
+
