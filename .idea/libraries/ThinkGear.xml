@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="ThinkGear">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/EEGTest/libs/ThinkGear.jar!/" />
+      <root url="jar://$PROJECT_DIR$/EEGTest/Libraries/ThinkGear.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

@@ -3,6 +3,7 @@ package com.ampvita.eegtest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.pm.ActivityInfo;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
@@ -17,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
+
 
 import com.firebase.client.FirebaseError;
 import com.jjoe64.graphview.GraphView;
@@ -42,6 +44,10 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.ValueEventListener;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class MainActivity extends ActionBarActivity {
     PrintWriter out;
@@ -52,10 +58,15 @@ public class MainActivity extends ActionBarActivity {
     GraphViewSeries eegSeries;
     double graph2LastXValue = 0d;
     GraphView graphView;
+    int send = 0;
+    static final Handler h = new Handler();
+
 
     ArrayList<BrainStateModel> brainStates; // Stores the brain state models used for classifying the current state of mind
     ArrayList<Integer> latestSignalSample; // Stores the most recently collected EEG data points
     public static int samplePointCount = 100; // The number of points to buffer in the most recently collected points
+
+
 
 
     // Default IP
@@ -94,6 +105,7 @@ public class MainActivity extends ActionBarActivity {
 
         LinearLayout layout = (LinearLayout) findViewById(R.id.graph1);
         layout.addView(graphView);
+
 
         serverStatus = (TextView)findViewById(R.id.displayText);
 
@@ -141,8 +153,11 @@ public class MainActivity extends ActionBarActivity {
                 //Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
                 //firebaseReference.setValue("Bubble online!"); // Write data to Firebase
                 postBrainwaveDataExample("woo");
+
+
             }
         });
+
     }
 
     @Override
@@ -163,6 +178,8 @@ public class MainActivity extends ActionBarActivity {
 
             }
         });
+
+
     }
 
     @Override
@@ -272,9 +289,12 @@ public class MainActivity extends ActionBarActivity {
                     graph2LastXValue += 1d;
                     eegSeries.appendData(new GraphView.GraphViewData(graph2LastXValue, rawValue),
                         true, 120);
-                    if (out != null) {
+                    if (out != null && (send % 20 == 0)) {
                         out.println("e" + rawValue);
+                        Log.e("test", ""+rawValue);
+                        send = 0;
                     }
+                    send++;
 
 
                     // TODO: Store these values when in "capture" mode
@@ -299,6 +319,7 @@ public class MainActivity extends ActionBarActivity {
                     break;
             }
         }
+
     };
 
 

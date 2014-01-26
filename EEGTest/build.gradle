@@ -1,3 +1,4 @@
+
 buildscript {
     repositories {
         mavenCentral()
@@ -32,7 +33,7 @@ android {
 
 dependencies {
     compile 'com.android.support:appcompat-v7:+'
-    compile files('libs/ThinkGear.jar')
-    compile files('libs/GraphView-3.1.1.jar')
-    compile files('libs/firebase-client-jvm-LATEST.jar')
+    compile files('Libraries/ThinkGear.jar')
+    compile files('Libraries/GraphView-3.1.1.jar')
+    compile files('Libraries/firebase-client-jvm-LATEST.jar')
 }

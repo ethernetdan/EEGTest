@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/EEGTest.iml" filepath="$PROJECT_DIR$/EEGTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/EEGTest/EEGTest-EEGTest.iml" filepath="$PROJECT_DIR$/EEGTest/EEGTest-EEGTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Sockets/Sockets.iml" filepath="$PROJECT_DIR$/Sockets/Sockets.iml" />
     </modules>
   </component>
 </project>
