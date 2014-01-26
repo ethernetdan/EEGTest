@@ -25,6 +25,9 @@ import com.jjoe64.graphview.LineGraphView;
 import com.neurosky.thinkgear.TGDevice;
 import com.neurosky.thinkgear.TGRawMulti;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -41,6 +44,7 @@ import com.firebase.client.ValueEventListener;
 
 
 public class MainActivity extends ActionBarActivity {
+    PrintWriter out;
     TGDevice tgDevice;
     BluetoothAdapter btAdapter;
     TextView serverStatus;
@@ -267,7 +271,11 @@ public class MainActivity extends ActionBarActivity {
                     int rawValue = msg.arg1;
                     graph2LastXValue += 1d;
                     eegSeries.appendData(new GraphView.GraphViewData(graph2LastXValue, rawValue),
-                            true, 120);
+                        true, 120);
+                    if (out != null) {
+                        out.println("e" + rawValue);
+                    }
+
 
                     // TODO: Store these values when in "capture" mode
                     latestSignalSample.add(rawValue); // Append new element to list
@@ -348,13 +356,13 @@ public class MainActivity extends ActionBarActivity {
                         networkHandler.post(new Runnable() {
                             @Override
                             public void run() {
-
                                 serverStatus.setText("Connected.");
                             }
                         });
 
                         try {
                             BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(client.getOutputStream())));
                             String line = null;
                             while ((line = in.readLine()) != null) {
                                 final String data = line;
