@@ -199,7 +199,13 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void on(String event, IOAcknowledge ack, Object... args) {
 //                System.out.println("Server triggered event '" + event + "'");
-                Log.e(event, args[0].toString());
+                if(event.equals("smartphone-ack")) {
+                    if(latestSignalSample.size() > 0){
+                        wsocket.emit("mindwave", latestSignalSample);
+                        latestSignalSample.clear();
+                    }
+                }
+
             }
         });
 
