@@ -26,7 +26,6 @@ import com.neurosky.thinkgear.TGDevice;
 import com.neurosky.thinkgear.TGRawMulti;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -39,8 +38,6 @@ import java.net.Socket;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.ValueEventListener;
-
-import org.json.*;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -56,11 +53,9 @@ public class MainActivity extends ActionBarActivity {
     ArrayList<Integer> latestSignalSample; // Stores the most recently collected EEG data points
     public static int samplePointCount = 100; // The number of points to buffer in the most recently collected points
 
-    private JSONObject MYOBJ;
-
 
     // Default IP
-    public static String SERVERIP = "10.0.2.2";
+    public static String SERVERIP = "10.0.2.2"; // Dan's Wi-Fi hotspot: "10.0.2.2";
 
     // Designate a port
     public static final int SERVERPORT = 6002;
@@ -141,7 +136,7 @@ public class MainActivity extends ActionBarActivity {
                 // Perform action on click
                 //Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
                 //firebaseReference.setValue("Bubble online!"); // Write data to Firebase
-                postBrainDataExample();
+                postBrainwaveDataExample("woo");
             }
         });
     }
@@ -186,38 +181,29 @@ public class MainActivity extends ActionBarActivity {
         // Update BrainStateModel objects (if needed)
     }
 
-    public void postBrainDataExample() {
-        MYOBJ = new JSONObject() {
-            {
-                try {
-                    // Create and return a new child reference for the object
-                    Firebase freshFirebaseReference = firebaseReference.push();
-                    //freshFirebaseReference.setValue("button pressed...");
+    public void postBrainwaveDataExample(String brainwaveLabel) {
+        try {
+            // Create and return a new child reference for the object
+            Firebase freshFirebaseReference = firebaseReference.push();
+            //freshFirebaseReference.setValue("button pressed...");
 
-                    // Create object to store in Firebase
-                    Map<String, Object> toSet = new HashMap<String, Object>();
-                    toSet.put("label", "hacking");
+            // Create object to store in Firebase
+            Map<String, Object> toSet = new HashMap<String, Object>();
+            toSet.put("label", brainwaveLabel); // Set the label of the brainwave activity data
+            toSet.put("data", latestSignalSample); // Put the data array
 
-//                    List<Object> exampleData = new List<Object>();
-//                    for (int i = 0; i < latestSignalSample.size(); i++) {
-//                        exampleData.
-//                    }
-                    toSet.put("data", latestSignalSample);
-
-                    // Write example to Firebase
-                    freshFirebaseReference.setValue(toSet, new Firebase.CompletionListener() {
-                        @Override
-                        public void onComplete(FirebaseError error, Firebase ref) {
-                            //outstandingSegments.remove(segmentName);
-                            Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    //firebaseReference.setValue(toSet);
-                } catch(Exception e){
-                    e.printStackTrace();
+            // Write example to Firebase
+            freshFirebaseReference.setValue(toSet, new Firebase.CompletionListener() {
+                @Override
+                public void onComplete(FirebaseError error, Firebase ref) {
+                    //outstandingSegments.remove(segmentName);
+                    Toast.makeText(getApplicationContext(), "Testing!", Toast.LENGTH_SHORT).show();
                 }
-            }
-        };
+            });
+            //firebaseReference.setValue(toSet);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void postBrainDataModels() {
@@ -233,7 +219,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private final Handler eegHandler = new Handler() {
-        String TAG = "EEGTest";
+        String TAG = "Cyborg";
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -377,7 +363,11 @@ public class MainActivity extends ActionBarActivity {
                                     @Override
                                     public void run() {
                                         /// the fun goes here
-                                        serverStatus.setText(data);
+                                        serverStatus.setText(data); // Set the text to that last received from Glass
+
+                                        // TODO: Post data to Firebase
+                                        // TODO: Update model (average)
+                                        postBrainwaveDataExample(data);
                                     }
                                 });
                             }
