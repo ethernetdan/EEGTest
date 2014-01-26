@@ -9,6 +9,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -92,6 +93,9 @@ public class MainActivity extends ActionBarActivity {
     // Create a reference to a Firebase location
     private Firebase firebaseReference;
 
+    int meditiation = 0;
+    int attention = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,8 +146,8 @@ public class MainActivity extends ActionBarActivity {
          * Start server
          */
 
-        Thread fst = new Thread(new ServerThread());
-        fst.start();
+//        Thread fst = new Thread(new ServerThread());
+//        fst.start();
 
         /**
          * Set up Firebase for requests.
@@ -199,11 +203,16 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void on(String event, IOAcknowledge ack, Object... args) {
 //                System.out.println("Server triggered event '" + event + "'");
-                if(event.equals("smartphone-ack")) {
+                if(event.equals("request-mindwave-data")) {
                     if(latestSignalSample.size() > 0){
                         wsocket.emit("mindwave", latestSignalSample);
                         latestSignalSample.clear();
                     }
+                } else if (event.equals("request-mindwave-attention")) {
+                    wsocket.emit("mindwave-attention", attention);
+
+                } else if (event.equals("request-mindwave-meditation")) {
+                    wsocket.emit("mindwave-meditation", meditiation);
                 }
 
             }
@@ -213,6 +222,16 @@ public class MainActivity extends ActionBarActivity {
         wsocket.emit("smartphone", "hi");
 
     } catch(Exception e) {}}
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            wsocket.emit("smartphone-volume-down");
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            wsocket.emit("smartphone-volume-up");
+        }
+        return true;
+    }
 
     @Override
     public void onStart() {
@@ -236,16 +255,16 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        try {
-            // make sure you close the socket upon exiting
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        try {
+//            // make sure you close the socket upon exiting
+//            serverSocket.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * Retrieves and buffers the stored gestures for the current user (from the remote server)
@@ -318,7 +337,11 @@ public class MainActivity extends ActionBarActivity {
                 case TGDevice.MSG_POOR_SIGNAL:
                     Log.v(TAG, "PoorSignal: " + msg.arg1);
                     break;
+                case TGDevice.MSG_MEDITATION:
+                    meditiation = msg.arg1;
+                    break;
                 case TGDevice.MSG_ATTENTION:
+                    attention = msg.arg1;
                     Log.v(TAG, "Attention: " + msg.arg1);
                     break;
                 case TGDevice.MSG_HEART_RATE:
@@ -485,6 +508,7 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     }
+
 
 }
 
